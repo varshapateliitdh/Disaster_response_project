@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="rviz" default="false"/>
+	<arg name="world" default="0"/>
+
+	<!-- Include the MAVROS node with SITL and Gazebo -->
+	<include file="$(find px4)/launch/mavros_posix_sitl.launch">
+    	<arg name="world" value="$(find dronedash)/worlds/$(arg world).world"/>
+    	<arg name="sdf" value="$(find mavlink_sitl_gazebo)/models/iris_rplidar/iris_rplidar.sdf"/>
+	</include>
+
+	<!-- Our node to control the drone -->
+	
+	<node pkg= "dronedash" type="demo_node.py" name="demo_node" required="true" output="screen" />
+
+	<!--node pkg= "dronedash" type="image_subscriber.py" name="image_subscriber" output="screen" />
+    <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" /-->
+    <!--node pkg= "dronedash" type="odom_base_link_transform" name="odom_base_link_transform.py"  /-->
+
+	<!-- RVIZ -->
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find dronedash)/rviz/config.rviz" if="$(arg rviz)" />
+</launch>
