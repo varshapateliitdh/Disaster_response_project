@@ -25,6 +25,7 @@ class Controller:
         self.next_destination = None
         self.temp_walls = 0
         self.counter = 0
+        self.closed = []
 
     
     def obstacle(self, threshold):
@@ -88,43 +89,61 @@ class Controller:
         self.timer.set_timeout(timeout_s=10)
 
     def analyze_surroundings(self):
-        current_angle = self.movement.current_angle
-        print("Node Children: ", self.current_node)
-        if self.temp_walls < 4:
-            if self.obstacle(ANA_OBSTACLE_THRESHOLD):
-                self.current_node.neighbours[current_angle] = WALL
-            else:
-                self.current_node.neighbours[current_angle] = FREE
-            #self.movement.rotate_by(90)
-            self.movement.current_angle +=90
-            if self.movement.current_angle == 360:
-                self.movement.current_angle = 0
-            self.timer.set_timeout(timeout_s=ROTATION_TIME)
-            self.temp_walls += 1
-
-        elif self.temp_walls == 4:
-            if self.prev_node:
-                self.prev_node.neighbours[current_angle] = self.current_node
-                self.current_node.neighbours[
-                    (current_angle+180) % 360] = self.prev_node
-            self.temp_walls = 0
+        if self.current_node.coordinate in self.closed:
+            index = self.closed.index(self.current_node.coordinate)
+            self.current_node = self.node_list.nodes[index]
             self.movement.state = THINKING
             self.prev_node = self.current_node
             self.current_node = None
 
+        else:
+            current_angle = self.movement.current_angle
+            print("Node Children: ", self.current_node)
+            if self.temp_walls < 4:
+                if self.obstacle(ANA_OBSTACLE_THRESHOLD):
+                    self.current_node.neighbours[self.movement.current_angle] = WALL
+                else:
+                    if self.current_node.neighbours[self.movement.current_angle]!= NEVER:
+                        self.current_node.neighbours[self.movement.current_angle] = FREE
+
+                self.movement.current_angle +=90
+                if self.movement.current_angle == 360:
+                    self.movement.current_angle = 0
+                self.temp_walls += 1
+
+            elif self.temp_walls == 4:
+                if self.prev_node:
+                    if self.current_node.coordinate not in self.closed:
+                        self.current_node.neighbours[
+                            (current_angle+180) % 360] = WALLS
+                    
+                self.temp_walls = 0
+                self.movement.state = THINKING
+                self.prev_node = self.current_node
+                self.current_node = None
+
     def path_finder(self):
         algorithm = Algorithm()
-        path_list = algorithm.dijkstra(self.prev_node, self.node_list)
+        self.closed = []
+        path_list= algorithm.dijkstra(self.prev_node, self.node_list)
+
+        if path_list == None or len(path_list)==0:
+            raise Exception("No path found, No more paths to explore!!")
+        
+        for nodez in self.node_list.nodes:
+            self.closed.append(nodez.coordinate)
+        self.closed.pop()
         print("-------------PATH FOUND-----------")
-        for path in path_list:
-            print(path, end=" ")
-        print()
-        print("-----------------------------")
-        self.movement.path = path_list
-        self.movement.state = PATH_TRAVERSE
+        if path_list:
+            for path in path_list:
+                print(path, end=" ")
+            print()
+            print("-----------------------------")
+            self.movement.path = path_list
+            self.movement.state = PATH_TRAVERSE
+
 
     def update(self):
-        # data_set_saver(self)
         if not self.timer.check_timeout():
             return
         if self.movement.state == FREE_ROAM and self.obstacle(MOV_OBSTACLE_THRESHOLD):

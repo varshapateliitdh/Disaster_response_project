@@ -35,8 +35,12 @@ class Node:
                 temp_neighbours[key] = "WALL"
             elif value == FREE:
                 temp_neighbours[key] = "FREE"
-            else:
-                temp_neighbours[key] = value.coordinate
+            elif value == WALLS:
+                temp_neighbours[key] = "WALLS"
+            elif value == NEVER:
+                temp_neighbours[key] = "NEVER"
+            #else:
+                #temp_neighbours[key] = value.coordinate
         string += str(temp_neighbours) + "\n"
         string += "-"*50
         return string
